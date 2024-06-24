@@ -42,11 +42,11 @@ class AccountServiceTest {
     //////////////////////////////////////////////////////
 
     @Test
-    void createAcountSuccess(){
+    void createAccountSuccess(){
         //given
         AccountUser user = AccountUser.builder()
-                        .id(1L)
-                        .name("jiwon").build();
+                        .id(12L)
+                        .name("Pobi").build();
 
         given(accountUserRepository.findById(anyLong()))
                 .willReturn(Optional.of(user));
@@ -67,7 +67,7 @@ class AccountServiceTest {
         verify(accountRepository, times(1)).save(captor.capture());
 
         assertEquals(12L, accountDto.getUserId());
-        assertEquals("1000000013", accountDto.getAccountNumber());
+        assertEquals("1000000015", accountDto.getAccountNumber());
 
     }
 
@@ -96,7 +96,7 @@ class AccountServiceTest {
         verify(accountRepository, times(1)).save(captor.capture());
 
         assertEquals(15L, accountDto.getUserId());
-        assertEquals("1000000000", accountDto.getAccountNumber());
+        assertEquals("1000000000", captor.getValue().getAccountNumber());
 
     }
 
@@ -161,12 +161,12 @@ class AccountServiceTest {
 
         ArgumentCaptor<Account> captor = ArgumentCaptor.forClass(Account.class);
         //when
-        AccountDto accountDto = accountService.DeleteAccount(1L, "1234567890");
+        AccountDto accountDto = accountService.DeleteAccount(12L, "1234567890");
         //then
         verify(accountRepository, times(1)).save(captor.capture());
 
         assertEquals(12L, accountDto.getUserId());
-        assertEquals("1000000013", accountDto.getAccountNumber());
+        assertEquals("1000000012", accountDto.getAccountNumber());
         assertEquals(AccountStatus.UNREGISTERED, captor.getValue().getAccountStatus());
     }
 
