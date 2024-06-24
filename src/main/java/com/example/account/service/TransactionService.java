@@ -34,6 +34,7 @@ public class TransactionService {
     private final AccountRepository accountRepository;
 
     /**
+     * 잔액 사용
      * 사용자 없는 경우,
      * 계좌가 없는 경우,
      * 사용자 아이디와 계좌 소유주가 다른 경우,
@@ -57,7 +58,7 @@ public class TransactionService {
 //        Long accountBalance = account.getBalance();
 //        account.setBalance(accountBalance - amount);
 
-        return TransactionDto.fromEntity(saveAndGetTransaction(TransactionResultType.S, account, amount));
+        return TransactionDto.fromEntity(saveAndGetTransaction(TranactionType.USE, TransactionResultType.S, account, amount));
     }
 
     public void validateUseBalance(AccountUser user, Account account, Long amount){
@@ -83,17 +84,18 @@ public class TransactionService {
                 .orElseThrow(()-> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
 
         // 이체 실패 insert
-        saveAndGetTransaction(TransactionResultType.F, account, amount);
+        saveAndGetTransaction(TranactionType.USE, TransactionResultType.F, account, amount);
 
     }
 
     public Transaction saveAndGetTransaction(
+            TranactionType tranactionType,
             TransactionResultType transactionResultType,
             Account account,
             Long amount) {
         return transactionRepository.save(
                 Transaction.builder()
-                        .tranactionType(TranactionType.USE)
+                        .tranactionType(tranactionType)
                         .transactionResultType(transactionResultType)
                         .account(account)
                         .amount(amount)
@@ -105,5 +107,52 @@ public class TransactionService {
 
     }
 
+     /**
+     * 잔액 사용 취소
+     */
+    @Transactional
+    public TransactionDto cancelBalance(
+            String transactionId,
+            String accountNumber,
+            Long amount)
+    {
 
+        Transaction transaction = transactionRepository.findByTransactionId(transactionId)
+                .orElseThrow(()-> new AccountException(ErrorCode.TRANSACTION_NOT_FOUND));
+
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(()-> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        validateCancelBalance(transaction, account, amount);
+
+        account.cancelBalance(amount);
+        return TransactionDto.fromEntity(
+                saveAndGetTransaction(TranactionType.CANCEL, TransactionResultType.S, account, amount)
+        );
+    }
+
+    private void validateCancelBalance(Transaction transaction, Account account, Long amount) {
+
+        if(!Objects.equals(transaction.getAccount().getId(), account.getId())) {
+            throw new AccountException(ErrorCode.TRANSACTION_ACCOUNT_UN_MATCH);
+        }
+
+        if(!Objects.equals(transaction.getAmount(), amount)) {
+            throw new AccountException(ErrorCode.CANCEL_MUST_FULLY);
+        }
+
+        if(transaction.getTransactedAt().isBefore(LocalDateTime.now().minusYears(1))) {
+            throw new AccountException(ErrorCode.TOO_OLD_ORDER_TO_CANCEL);
+        }
+    }
+
+    public void saveFailedCancelTransaction(String accountNumber, Long amount) {
+
+        // 잘못된 계좌면 반환
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(()-> new AccountException(ErrorCode.ACCOUNT_NOT_FOUND));
+
+        // 이체 실패 insert
+        saveAndGetTransaction(TranactionType.CANCEL, TransactionResultType.F, account, amount);
+    }
 }
