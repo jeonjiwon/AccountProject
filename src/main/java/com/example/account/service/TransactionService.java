@@ -155,4 +155,16 @@ public class TransactionService {
         // 이체 실패 insert
         saveAndGetTransaction(TranactionType.CANCEL, TransactionResultType.F, account, amount);
     }
+
+    public TransactionDto queryTransaction(String transactionId) {
+
+        Transaction transaction = transactionRepository.findByTransactionId(transactionId)
+                .orElseThrow(()-> new AccountException(ErrorCode.TRANSACTION_NOT_FOUND));
+
+        return TransactionDto.fromEntity(
+                transactionRepository.findByTransactionId(transactionId)
+                        .orElseThrow(()-> new AccountException(ErrorCode.TRANSACTION_NOT_FOUND))
+        );
+
+    }
 }
