@@ -1,10 +1,8 @@
 package com.example.account.controller;
 
-import com.example.account.dto.CancelBalance;
-import com.example.account.dto.CreateAccount;
-import com.example.account.dto.TransactionDto;
-import com.example.account.dto.UseBalance;
+import com.example.account.dto.*;
 import com.example.account.service.TransactionService;
+import com.example.account.type.TranactionType;
 import com.example.account.type.TransactionResultType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +17,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -98,6 +98,31 @@ class TransactionControllerTest {
     }
 
 
+    @Test
+    void successQueryTransaction() throws Exception {
+        //given
+        given(transactionService.queryTransaction((anyString())))
+                .willReturn(TransactionDto.builder()
+                        .accountNumber("1000000000")
+                        .tranactionType(TranactionType.USE)
+                        .transactedAt(LocalDateTime.now())
+                        .amount(54321L)
+                        .transactionId("transactionIdForCancel")
+                        .transactionResultType(TransactionResultType.S)
+                        .build()
+                );
 
+        //when
+
+        //then
+        mockMvc.perform(get("/transaction/12345"))
+                .andDo(print())
+                .andExpect(jsonPath("$.accountNumber").value("1000000000"))
+                .andExpect(jsonPath("$.tranactionType").value("USE"))
+                .andExpect(jsonPath("$.transactionResult").value("S"))
+                .andExpect(jsonPath("$.transactionId").value("transactionIdForCancel"))
+                .andExpect(jsonPath("$.amount").value(54321))
+                ;
+    }
 
 }
