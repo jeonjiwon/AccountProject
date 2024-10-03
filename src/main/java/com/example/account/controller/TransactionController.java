@@ -36,7 +36,6 @@ public class TransactionController {
 
         } catch (AccountException e) {
             log.error("Failed to use balance. ");
-            //test
             transactionService.saveFailedUseTransaction(
                     request.getAccountNumber(),
                     request.getAmount()
